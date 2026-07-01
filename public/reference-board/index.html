@@ -1,0 +1,715 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>REFERENCE — 무드보드</title>
+<style>
+  /* ░░ CLEAN THEME — 화이트 베이스 · 클로드 주황 키컬러 ░░ */
+  :root{
+    --bg:#faf9f7; --surface:#ffffff;
+    --ink:#1f1d1a; --dim:#6b675f; --dimmer:#9b968c;
+    --acc:#d97757; --acc-deep:#bd5d3e; --acc-soft:#f3e3db;
+    --acc2:#d97757;
+    --edge:#e7e3dc; --edge-soft:#efece6;
+    --r:18px; --shadow:0 1px 2px rgba(31,29,26,.04), 0 6px 18px rgba(31,29,26,.06);
+  }
+  *{box-sizing:border-box; margin:0; padding:0}
+  html{scroll-behavior:smooth}
+  body{
+    color:var(--ink); min-height:100vh; -webkit-font-smoothing:antialiased;
+    font-family:-apple-system,"SF Pro Display","Segoe UI",ui-sans-serif,system-ui,sans-serif;
+    background:var(--bg);
+  }
+
+  /* ---- header ---- */
+  header{
+    position:sticky; top:0; z-index:50; margin:0; padding:18px 24px 16px;
+    background:rgba(250,249,247,.88);
+    border-bottom:1px solid var(--edge);
+  }
+  .title{
+    font-size:14px; letter-spacing:.34em; font-weight:700; text-transform:uppercase;
+    display:flex; align-items:center; gap:12px; color:var(--ink);
+  }
+  .title .dot{width:9px;height:9px;border-radius:50%;
+    background:var(--acc); animation:pulse 2.4s infinite}
+  @keyframes pulse{50%{opacity:.4; transform:scale(.7)}}
+  .sub{color:var(--dim); font-size:11.5px; letter-spacing:.12em; margin-top:7px}
+  .sub b{color:var(--acc); font-weight:700}
+
+  .controls{display:flex; gap:10px; margin-top:16px; flex-wrap:wrap; align-items:center}
+  #search{
+    flex:1; min-width:200px; color:var(--ink); padding:11px 16px; font:inherit; font-size:13px;
+    border-radius:99px; letter-spacing:.02em; outline:none; transition:border-color .16s, box-shadow .16s;
+    background:var(--surface); border:1px solid var(--edge);
+  }
+  #search:focus{border-color:var(--acc); box-shadow:0 0 0 3px var(--acc-soft)}
+  #search::placeholder{color:var(--dimmer)}
+  .count{color:var(--dim); font-size:11.5px; letter-spacing:.1em; white-space:nowrap}
+  .count b{color:var(--ink); font-weight:700}
+
+  /* ＋ 레퍼 추가 버튼 */
+  .addbtn{font:inherit; font-size:12px; letter-spacing:.04em; padding:11px 16px; cursor:pointer;
+    border-radius:99px; color:#fff; font-weight:700; white-space:nowrap; transition:background .16s;
+    background:var(--acc); border:1px solid transparent}
+  .addbtn:hover{background:var(--acc-deep)}
+
+  .tags{display:flex; gap:8px; margin-top:14px; flex-wrap:wrap}
+  .tag{
+    font-size:11px; letter-spacing:.06em; padding:6px 13px; cursor:pointer;
+    border-radius:99px; user-select:none; transition:all .14s; color:var(--dim);
+    background:var(--surface); border:1px solid var(--edge);
+  }
+  .tag:hover{color:var(--ink); border-color:var(--dimmer)}
+  .tag.on{color:#fff; font-weight:700; border-color:transparent; background:var(--acc)}
+
+  /* ---- 출처 섹션 + grid (masonry) ---- */
+  main{padding:22px 18px 90px}
+  .grp{margin-bottom:34px}
+  .grphead{
+    display:flex; align-items:center; gap:12px; margin:0 0 16px; padding:12px 16px;
+    border-radius:12px; cursor:pointer; user-select:none; font-size:12.5px; letter-spacing:.05em;
+    color:var(--ink); background:var(--surface);
+    border:1px solid var(--edge); transition:border-color .16s;
+  }
+  .grphead:hover{border-color:var(--dimmer)}
+  .grphead .gd{width:11px; height:11px; border-radius:50%; flex:0 0 auto;
+    background:hsl(var(--h) 55% 55%)}
+  .grphead .gl{font-weight:700; flex:1; white-space:nowrap; overflow:hidden; text-overflow:ellipsis}
+  .grphead .gc{font-size:11px; color:#fff; font-weight:700; padding:2px 10px; border-radius:99px;
+    background:hsl(var(--h) 55% 55%); flex:0 0 auto}
+  .grphead .chev{color:var(--dim); font-size:10px; flex:0 0 auto; transition:transform .2s}
+  .grp.collapsed .grphead .chev{transform:rotate(-90deg)}
+  .grp.collapsed .grid{display:none}
+  /* 중립(핀터레스트·단독) 헤더 — 색 안 묶고 회색 */
+  .grphead.neutral .gd{background:var(--dimmer)}
+  .grphead.neutral .gc{background:var(--dim); color:#fff}
+  .grid{columns:4 300px; column-gap:18px}
+  .card{
+    break-inside:avoid; margin-bottom:18px; position:relative; border-radius:14px;
+    overflow:hidden; transition:transform .18s, box-shadow .18s; background:var(--surface);
+    border:1px solid var(--edge); box-shadow:var(--shadow);
+  }
+  .card:hover{transform:translateY(-3px); border-color:var(--dimmer);
+    box-shadow:0 2px 4px rgba(31,29,26,.06), 0 12px 28px rgba(31,29,26,.12)}
+  .card img{width:100%; display:block; min-height:60px; background:var(--edge-soft); cursor:pointer}
+  .card .broken{padding:34px 14px; color:var(--dim); font-size:11px; text-align:center; line-height:1.6;
+    background:var(--edge-soft)}
+
+  /* 메타: 이미지 아래로 펼쳐지는 블록 (오버레이 아님 → 이미지 안 가림) */
+  .meta{
+    max-height:0; opacity:0; overflow:hidden; padding:0 15px;
+    background:var(--surface);
+    transition:max-height .28s ease, opacity .2s, padding .28s ease;
+  }
+  .card.open .meta{max-height:360px; opacity:1; padding:14px 15px 14px; border-top:1px solid var(--edge)}
+  .meta .h{font-size:12.5px; font-weight:700; letter-spacing:.01em; line-height:1.35; margin-bottom:6px}
+  .meta .note{font-size:11px; color:var(--dim); line-height:1.5; margin-bottom:9px}
+  .meta .mtags{display:flex; gap:6px; flex-wrap:wrap; margin-bottom:10px}
+  .meta .mtag{font-size:9.5px; letter-spacing:.04em; color:var(--acc); font-weight:600}
+  .meta .mtag::before{content:"#"}
+
+  .acts{display:flex; gap:7px}
+  .acts a,.acts button{
+    flex:1; font:inherit; font-size:10.5px; letter-spacing:.04em; padding:8px 4px; cursor:pointer;
+    color:var(--ink); text-align:center; text-decoration:none; border-radius:9px; transition:all .14s;
+    background:var(--bg); border:1px solid var(--edge);
+  }
+  .acts a:hover,.acts button.save:hover,.acts button.zoom:hover{
+    color:#fff; border-color:transparent; background:var(--acc)}
+  .acts button:disabled{opacity:.5; cursor:wait}
+
+  /* 출처 칩 (좌상단) — 같은 출처끼리 색으로 묶임 */
+  .card .srcchip{
+    position:absolute; top:9px; left:9px; z-index:3; max-width:74%;
+    display:inline-flex; align-items:center; gap:6px; padding:5px 11px 5px 8px;
+    border-radius:99px; cursor:pointer; font-size:10px; letter-spacing:.02em; color:var(--ink);
+    white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
+    background:rgba(255,255,255,.92); border:1px solid var(--edge);
+    box-shadow:0 1px 4px rgba(31,29,26,.12); opacity:0; transition:opacity .16s, background .16s;
+  }
+  .card:hover .srcchip,.card.open .srcchip{opacity:1}
+  .card .srcchip.shared{opacity:1}              /* 공유 출처는 항상 표시 */
+  .card .srcchip .sd{width:8px; height:8px; border-radius:50%; flex:0 0 auto;
+    background:var(--dimmer)}
+  .card .srcchip.shared .sd{background:hsl(var(--h) 55% 52%)}
+  .card .srcchip.shared{border-color:hsl(var(--h) 45% 70%)}
+  .card .srcchip.on{color:#fff; font-weight:700; border-color:transparent;
+    background:hsl(var(--h) 55% 52%)}
+  /* 공유 출처 카드: 상단에 색 띠 한 줄 (한눈에 그룹 인지) */
+  .card.shared-card{box-shadow:var(--shadow), inset 0 3px 0 hsl(var(--h,28) 55% 55%)}
+
+  /* 제외 카드 코너 X (호버 없이도 보임) */
+  .card .kill{
+    position:absolute; top:9px; right:9px; z-index:3; width:26px; height:26px;
+    display:grid; place-items:center; border-radius:50%; cursor:pointer;
+    color:var(--ink); font-size:13px; line-height:1; opacity:0; transition:all .14s;
+    background:rgba(255,255,255,.92); border:1px solid var(--edge);
+    box-shadow:0 1px 4px rgba(31,29,26,.12);
+  }
+  .card:hover .kill{opacity:1}
+  .card .kill:hover{color:#fff; border-color:transparent; background:#e0524e}
+
+  /* 정보 펼치기 토글 (좌상단, 호버 시 노출) — 확대 버튼 대체 */
+  .card .infochip{
+    position:absolute; top:9px; left:9px; z-index:3; width:26px; height:26px;
+    display:grid; place-items:center; border-radius:50%; cursor:pointer;
+    color:var(--ink); font-size:13px; line-height:1; opacity:0; transition:all .14s;
+    background:rgba(255,255,255,.92); border:1px solid var(--edge);
+    box-shadow:0 1px 4px rgba(31,29,26,.12);
+  }
+  .card:hover .infochip,.card.open .infochip{opacity:1}
+  .card .infochip:hover{color:#fff; border-color:transparent; background:var(--acc)}
+  .card.open .infochip{color:#fff; border-color:transparent; background:var(--acc)}
+
+  /* 내가 추가한 레퍼 뱃지 (좌하단, 펼치면 숨김) */
+  .card .mine{position:absolute; bottom:9px; left:9px; z-index:3; font-size:9px; letter-spacing:.06em;
+    padding:4px 9px; border-radius:99px; color:#fff; font-weight:700; pointer-events:none;
+    background:var(--acc)}
+  .card.open .mine{display:none}
+
+  /* 제외/복원 바 */
+  #exbar{display:none; align-items:center; gap:13px; margin-top:14px;
+    font-size:11.5px; letter-spacing:.06em; color:var(--dim)}
+  #exbar.on{display:flex}
+  #exbar b{color:#e0524e; font-weight:700}
+  #exbar button{font:inherit; font-size:11px; letter-spacing:.04em; padding:6px 14px; cursor:pointer;
+    color:var(--ink); border-radius:99px; transition:all .14s;
+    background:var(--surface); border:1px solid var(--edge)}
+  #exbar button:hover{color:var(--acc); border-color:var(--acc)}
+
+  /* ---- 레퍼 추가 모달 ---- */
+  #addmodal{position:fixed; inset:0; z-index:120; display:none; place-items:center; padding:24px;
+    background:rgba(31,29,26,.38)}
+  #addmodal.on{display:grid}
+  .addcard{width:min(440px,100%); max-height:88vh; overflow:auto; padding:24px; border-radius:var(--r);
+    background:var(--surface);
+    border:1px solid var(--edge); box-shadow:0 24px 60px rgba(31,29,26,.22)}
+  .addcard h2{font-size:13px; letter-spacing:.18em; text-transform:uppercase; margin-bottom:5px}
+  .addcard .hint{color:var(--dim); font-size:11px; letter-spacing:.03em; margin-bottom:6px; line-height:1.55}
+  .addcard label{display:block; font-size:10.5px; letter-spacing:.1em; color:var(--dim);
+    text-transform:uppercase; margin:14px 0 6px}
+  .addcard label span{text-transform:none; letter-spacing:0}
+  .addcard input[type=text],.addcard textarea{width:100%; color:var(--ink); font:inherit; font-size:13px;
+    padding:10px 13px; border-radius:10px; outline:none; resize:vertical;
+    background:var(--bg); border:1px solid var(--edge); transition:all .14s}
+  .addcard input:focus,.addcard textarea:focus{border-color:var(--acc); background:var(--surface);
+    box-shadow:0 0 0 3px var(--acc-soft)}
+  .addcard textarea{min-height:54px}
+  .addcard input::placeholder,.addcard textarea::placeholder{color:var(--dimmer)}
+  .drop{margin-top:6px; padding:18px; border-radius:12px; text-align:center; cursor:pointer;
+    color:var(--dim); font-size:11.5px; line-height:1.55; border:1px dashed var(--edge);
+    background:var(--bg); transition:all .14s}
+  .drop:hover,.drop.over{border-color:var(--acc); background:var(--acc-soft); color:var(--ink)}
+  .drop b{color:var(--acc)}
+  .srcwarn{display:none; margin-top:8px; padding:10px 13px; border-radius:10px; font-size:11px;
+    line-height:1.55; letter-spacing:.02em; color:#8a5a1f;
+    background:#fdf3e3; border:1px solid #f0d9af}
+  .srcwarn.on{display:block}
+  .srcwarn b{color:#5e3c10}
+  .chipsuggest{display:flex; flex-wrap:wrap; gap:6px; margin-top:9px}
+  .chipsuggest .sg{font-size:10px; letter-spacing:.04em; padding:5px 11px; border-radius:99px; cursor:pointer;
+    color:var(--dim); background:var(--bg); border:1px solid var(--edge); transition:all .12s}
+  .chipsuggest .sg:hover{color:var(--ink); border-color:var(--dimmer)}
+  .chipsuggest .sg.on{color:#fff; font-weight:700; border-color:transparent; background:var(--acc)}
+  .chipsuggest .sg::before{content:"#"; opacity:.5}
+  .preview{margin-top:12px; display:none}
+  .preview img{width:100%; border-radius:10px; border:1px solid var(--edge); display:block}
+  .addrow{display:flex; gap:10px; margin-top:22px}
+  .addrow button{flex:1; font:inherit; font-size:12px; letter-spacing:.06em; padding:12px; cursor:pointer;
+    border-radius:99px; transition:all .14s; color:var(--ink);
+    background:var(--bg); border:1px solid var(--edge)}
+  .addrow button.go{color:#fff; font-weight:700; border-color:transparent; background:var(--acc)}
+  .addrow button.go:hover{background:var(--acc-deep)}
+  .addrow button:hover{border-color:var(--dimmer)}
+
+  /* ---- lightbox ---- */
+  #lb{
+    position:fixed; inset:0; z-index:100; display:none; place-items:center; padding:40px; cursor:zoom-out;
+    background:rgba(31,29,26,.78);
+  }
+  #lb.on{display:grid}
+  #lb img{max-width:92vw; max-height:88vh; object-fit:contain; border-radius:12px;
+    box-shadow:0 20px 70px rgba(0,0,0,.5)}
+  #lb .cap{position:fixed; bottom:20px; left:0; right:0; text-align:center;
+    color:rgba(255,255,255,.78); font-size:11.5px; letter-spacing:.08em}
+  #lb .cap b{color:var(--acc); font-weight:600}
+
+  .empty{color:var(--dim); text-align:center; padding:80px 20px; font-size:13px; letter-spacing:.1em}
+  footer{padding:26px; text-align:center; color:var(--dimmer); font-size:10px; letter-spacing:.22em;
+    text-transform:uppercase}
+  @media(max-width:600px){.grid{columns:2 150px} header{padding:14px 16px}}
+</style>
+</head>
+<body>
+
+<!-- ════════════════════════════════════════════════════════════════
+     이미지 추가법: 아래 IMAGES 배열에 객체 하나 추가하면 끝.
+       { src:"이미지URL",
+         title:"제목",
+         source:"출처 페이지 URL",   // 선택
+         tags:["태그1","태그2"],     // 선택
+         note:"한 줄 메모" }          // 선택
+     ════════════════════════════════════════════════════════════════ -->
+<script id="data">
+const IMAGES = [
+  // ── 아이소 픽셀 인테리어 디오라마 (2026-06-28 1차 수집) ──
+  { src:"https://img.itch.zone/aW1nLzE4MTk1MjgzLnBuZw==/original/4xFYsy.png",
+    title:"Cozy Room — Isometric (ToffeeCraft)",
+    source:"https://toffeecraft.itch.io/cozy-room-pixel-asset-pack",
+    tags:["isometric","cozy","room-cutaway","asset-sheet"],
+    note:"레퍼와 가장 근접. 방을 큐브로 잘라낸 컷 + 개별 에셋 분리. 따뜻한 톤." },
+  { src:"https://img.itch.zone/aW1nLzE4MTk1MDM5LnBuZw==/original/9sLtwK.png",
+    title:"Cozy Room — 가구 디테일",
+    source:"https://toffeecraft.itch.io/cozy-room-pixel-asset-pack",
+    tags:["isometric","cozy","interior"],
+    note:"침대·책상·화분 개별 스프라이트. 오브젝트 밀도 참고." },
+  { src:"https://img.itch.zone/aW1nLzE4MjAxOTY0LnBuZw==/original/3bjHVG.png",
+    title:"Cozy Room — 룸 조합 예시",
+    source:"https://toffeecraft.itch.io/cozy-room-pixel-asset-pack",
+    tags:["isometric","cozy","room-cutaway"],
+    note:"에셋 배치된 완성 방. 클러터(cozy clutter) 레이아웃." },
+  { src:"https://img.itch.zone/aW1nLzE4MjA3NTY1LnBuZw==/original/sHfvrO.png",
+    title:"Cozy Room — 팔레트/변형",
+    source:"https://toffeecraft.itch.io/cozy-room-pixel-asset-pack",
+    tags:["isometric","cozy","palette"],
+    note:"컬러 변형 시트. 네 레퍼 우측 팔레트 칩 구성과 동일 발상." },
+  { src:"https://img.itch.zone/aW1nLzEwODI4MDEwLnBuZw==/original/OAZehx.png",
+    title:"Isometric Interiors — Tileset (pixel_Salvaje)",
+    source:"https://pixel-salvaje.itch.io/isometric-interiors",
+    tags:["isometric","interior","room-cutaway","tileset"],
+    note:"방 큐브 컷 정통. 벽 2면 + 바닥 아이소 그리드 구조 레퍼." },
+  { src:"https://img.itch.zone/aW1nLzI2ODA5OTI0LnBuZw==/original/TLY3Ts.png",
+    title:"Isometric Interiors — 방 변형",
+    source:"https://pixel-salvaje.itch.io/isometric-interiors",
+    tags:["isometric","interior","warm"],
+    note:"따뜻한 우드톤 인테리어. 창·선반 구성 참고." },
+  { src:"https://img.itch.zone/aW1nLzEwODM0MTc1LnBuZw==/original/pPkHcK.png",
+    title:"Isometric Interiors — 가구 에셋",
+    source:"https://pixel-salvaje.itch.io/isometric-interiors",
+    tags:["isometric","interior","asset-sheet"],
+    note:"개별 가구 스프라이트 시트. 도트 디테일 밀도 기준." },
+  { src:"https://img.itch.zone/aW1nLzI2ODA4OTcxLnBuZw==/original/W7j%2BYT.png",
+    title:"Isometric Interiors — 인테리어 씬",
+    source:"https://pixel-salvaje.itch.io/isometric-interiors",
+    tags:["isometric","interior","room-cutaway"],
+    note:"오브젝트 빼곡한 완성 룸. 맥시멀 디테일." },
+  { src:"https://img.itch.zone/aW1nLzI1MDQ0MDExLnBuZw==/original/oiRRQG.png",
+    title:"Isometric Interiors — 라이팅 변형",
+    source:"https://pixel-salvaje.itch.io/isometric-interiors",
+    tags:["isometric","interior","lighting"],
+    note:"창에서 들어오는 소프트 라이팅. 그림자 처리 참고." },
+  { src:"https://img.itch.zone/aW1nLzIyNjQxNjcyLnBuZw==/original/Guw5mw.png",
+    title:"Isometric Interiors — 컬렉션",
+    source:"https://pixel-salvaje.itch.io/isometric-interiors",
+    tags:["isometric","interior","tileset"],
+    note:"타일 모듈 모음. 조립식 방 제작 시스템 발상." },
+  { src:"https://img.itch.zone/aW1nLzg5MTA2MDEucG5n/original/yz3Tee.png",
+    title:"Tiny Blocks — Isometric Pixel Tiles (dani maccari)",
+    source:"https://dani-maccari.itch.io/tiny-blocks-isometric-pixel-assets",
+    tags:["isometric","tileset","minimal"],
+    note:"미니멀 큐브 블록. 깔끔한 아이소 폼 베이스 참고." },
+  { src:"https://img.itch.zone/aW1nLzE5NDk2NTAwLnBuZw==/original/2a6%2FVg.png",
+    title:"Simple Cozy — Farm Asset Pack (Aibyzz)",
+    source:"https://aibyzz.itch.io/sc-farm-pack",
+    tags:["isometric","cozy","warm","32x32"],
+    note:"32×32 코지 팜. 채도 낮은 어스톤 팔레트 결이 맞음." },
+
+  // ══ Pinterest 수집 (2026-06-28) · 코지 아이소 픽셀 룸 ══
+  { src:"https://i.pinimg.com/736x/7b/3e/e9/7b3ee9c44690a605bd5f1fe77fe4957e.jpg", title:"Cozy iso room — 01", source:"https://www.pinterest.com/search/pins/?q=isometric%20pixel%20art%20cozy%20room%20interior", tags:["isometric","pixel","cozy","interior","pinterest"], note:"코지 아이소 픽셀 룸 (Pinterest)" },
+  { src:"https://i.pinimg.com/736x/be/98/50/be985073886f21338aab014b1b247ec1.jpg", title:"Cozy iso room — 02", source:"https://www.pinterest.com/search/pins/?q=isometric%20pixel%20art%20cozy%20room%20interior", tags:["isometric","pixel","cozy","interior","pinterest"], note:"코지 아이소 픽셀 룸 (Pinterest)" },
+  { src:"https://i.pinimg.com/736x/94/69/5f/94695f153d30e28a8de527eba115e055.jpg", title:"像素小房间 — cozy", source:"https://www.pinterest.com/search/pins/?q=isometric%20pixel%20art%20cozy%20room%20interior", tags:["isometric","pixel","cozy","interior","pinterest"], note:"코지 아이소 픽셀 룸 (Pinterest)" },
+  { src:"https://i.pinimg.com/736x/3f/3d/37/3f3d37581aed054d93874d2697d2b9b2.jpg", title:"Cozy iso room — 04", source:"https://www.pinterest.com/search/pins/?q=isometric%20pixel%20art%20cozy%20room%20interior", tags:["isometric","pixel","cozy","interior","pinterest"], note:"코지 아이소 픽셀 룸 (Pinterest)" },
+  { src:"https://i.pinimg.com/736x/07/0a/4b/070a4be02a6c4759f5eb4fdda79f97a9.jpg", title:"Cozy iso room — 05", source:"https://www.pinterest.com/search/pins/?q=isometric%20pixel%20art%20cozy%20room%20interior", tags:["isometric","pixel","cozy","interior","pinterest"], note:"코지 아이소 픽셀 룸 (Pinterest)" },
+  { src:"https://i.pinimg.com/736x/4c/37/45/4c3745ffb4b6fe940947afe10265055d.jpg", title:"Cozy iso room — 06", source:"https://www.pinterest.com/search/pins/?q=isometric%20pixel%20art%20cozy%20room%20interior", tags:["isometric","pixel","cozy","interior","pinterest"], note:"코지 아이소 픽셀 룸 (Pinterest)" },
+  { src:"https://i.pinimg.com/736x/e8/0b/01/e80b01b77ad4392bbddc2e22ab3fa060.jpg", title:"Cozy iso room — 07", source:"https://www.pinterest.com/search/pins/?q=isometric%20pixel%20art%20cozy%20room%20interior", tags:["isometric","pixel","cozy","interior","pinterest"], note:"코지 아이소 픽셀 룸 (Pinterest)" },
+  { src:"https://i.pinimg.com/736x/41/86/35/4186356cc3425e91ccc7165cff7667fb.jpg", title:"Cozy iso room — 08", source:"https://www.pinterest.com/search/pins/?q=isometric%20pixel%20art%20cozy%20room%20interior", tags:["isometric","pixel","cozy","interior","pinterest"], note:"코지 아이소 픽셀 룸 (Pinterest)" },
+  { src:"https://i.pinimg.com/736x/48/96/ce/4896ce3e4437b2869719d156b40f6973.jpg", title:"Cozy iso room — 09", source:"https://www.pinterest.com/search/pins/?q=isometric%20pixel%20art%20cozy%20room%20interior", tags:["isometric","pixel","cozy","interior","pinterest"], note:"코지 아이소 픽셀 룸 (Pinterest)" },
+  { src:"https://i.pinimg.com/736x/f5/88/0d/f5880d689c6d9929635f765e778469dc.jpg", title:"Cozy iso room — 10", source:"https://www.pinterest.com/search/pins/?q=isometric%20pixel%20art%20cozy%20room%20interior", tags:["isometric","pixel","cozy","interior","pinterest"], note:"코지 아이소 픽셀 룸 (Pinterest)" },
+  { src:"https://i.pinimg.com/736x/38/99/1b/38991b658588a2b8e5d52e0b78ce0428.jpg", title:"Cozy iso room — 11", source:"https://www.pinterest.com/search/pins/?q=isometric%20pixel%20art%20cozy%20room%20interior", tags:["isometric","pixel","cozy","interior","pinterest"], note:"코지 아이소 픽셀 룸 (Pinterest)" },
+  { src:"https://i.pinimg.com/736x/8a/36/ed/8a36edbdc7df7d9b531a8fb8bdd447b3.jpg", title:"Cozy iso room — 12", source:"https://www.pinterest.com/search/pins/?q=isometric%20pixel%20art%20cozy%20room%20interior", tags:["isometric","pixel","cozy","interior","pinterest"], note:"코지 아이소 픽셀 룸 (Pinterest)" },
+
+  // ══ Pinterest 수집 · 다크 디스토피아 / sci-fi 디오라마 (JOSAQ 계열 무드) ══
+  { src:"https://i.pinimg.com/736x/3c/22/f1/3c22f1b93fadf8aa77014fcabf85fa79.jpg", title:"3D isometric room — boodoo", source:"https://kr.pinterest.com/pin/844493675939553/", tags:["isometric","pixel","dark","sci-fi","dystopian","pinterest"], note:"어두운 디스토피아/sci-fi 디오라마 (Pinterest)" },
+  { src:"https://i.pinimg.com/736x/8b/b1/c7/8bb1c74169b771d3fbeddc00742bb558.jpg", title:"Dark iso diorama — 02", source:"https://kr.pinterest.com/pin/1266706140777841/", tags:["isometric","pixel","dark","sci-fi","dystopian","pinterest"], note:"어두운 디스토피아/sci-fi 디오라마 (Pinterest)" },
+  { src:"https://i.pinimg.com/736x/84/ed/aa/84edaaa04db6f5405907d095e93df809.jpg", title:"Dark iso diorama — 03", source:"https://kr.pinterest.com/pin/7177680649184344/", tags:["isometric","pixel","dark","sci-fi","dystopian","pinterest"], note:"어두운 디스토피아/sci-fi 디오라마 (Pinterest)" },
+  { src:"https://i.pinimg.com/736x/c8/c3/3f/c8c33f8dea32de4ddf322660edf68c87.jpg", title:"Dark iso diorama — 04", source:"https://kr.pinterest.com/pin/353673376967889631/", tags:["isometric","pixel","dark","sci-fi","dystopian","pinterest"], note:"어두운 디스토피아/sci-fi 디오라마 (Pinterest)" },
+  { src:"https://i.pinimg.com/736x/7d/dd/be/7dddbe8cedf6b16fadd43a9deb6ed1fa.jpg", title:"Dark iso diorama — 05", source:"https://www.pinterest.com/search/pins/?q=isometric%20pixel%20art%20dystopian%20scene%20dark%20diorama", tags:["isometric","pixel","dark","sci-fi","dystopian","pinterest"], note:"어두운 디스토피아/sci-fi 디오라마 (Pinterest)" },
+  { src:"https://i.pinimg.com/736x/fb/e0/9a/fbe09aab2fe48a0313aa03b836988112.jpg", title:"Dark iso diorama — 06", source:"https://www.pinterest.com/search/pins/?q=isometric%20pixel%20art%20dystopian%20scene%20dark%20diorama", tags:["isometric","pixel","dark","sci-fi","dystopian","pinterest"], note:"어두운 디스토피아/sci-fi 디오라마 (Pinterest)" },
+  { src:"https://i.pinimg.com/736x/9c/77/9b/9c779ba1dcb98ed867bbaa5630ea245c.jpg", title:"Dark iso diorama — 07", source:"https://www.pinterest.com/search/pins/?q=isometric%20pixel%20art%20dystopian%20scene%20dark%20diorama", tags:["isometric","pixel","dark","sci-fi","dystopian","pinterest"], note:"어두운 디스토피아/sci-fi 디오라마 (Pinterest)" },
+  { src:"https://i.pinimg.com/736x/a0/a2/11/a0a21162b6a309bb629a9eafe826cb75.jpg", title:"Dark iso diorama — 08", source:"https://www.pinterest.com/search/pins/?q=isometric%20pixel%20art%20dystopian%20scene%20dark%20diorama", tags:["isometric","pixel","dark","sci-fi","dystopian","pinterest"], note:"어두운 디스토피아/sci-fi 디오라마 (Pinterest)" },
+  { src:"https://i.pinimg.com/736x/f5/6d/33/f56d33d69405f670591b18ef8f28ff6b.jpg", title:"Dark iso diorama — 09", source:"https://www.pinterest.com/search/pins/?q=isometric%20pixel%20art%20dystopian%20scene%20dark%20diorama", tags:["isometric","pixel","dark","sci-fi","dystopian","pinterest"], note:"어두운 디스토피아/sci-fi 디오라마 (Pinterest)" },
+  { src:"https://i.pinimg.com/736x/13/0c/91/130c910dc0d80c26ddc67ff945be5ed4.jpg", title:"Dark iso diorama — 10", source:"https://www.pinterest.com/search/pins/?q=isometric%20pixel%20art%20dystopian%20scene%20dark%20diorama", tags:["isometric","pixel","dark","sci-fi","dystopian","pinterest"], note:"어두운 디스토피아/sci-fi 디오라마 (Pinterest)" },
+
+  // ══ 육각 컷 디오라마 · 동양풍 야간 안뜰 (Claude 자동 태깅, 2026-06-28) ══
+  { src:"https://i.pinimg.com/736x/29/39/32/293932e8b851d181f2f5aec593f89f4d.jpg",
+    title:"야간 안뜰 식당 — 육각 아이소 디오라마",
+    source:"https://i.pinimg.com/736x/29/39/32/293932e8b851d181f2f5aec593f89f4d.jpg",
+    tags:["isometric","diorama","hexagon","cozy","warm","night","lantern","east-asian","interior","illustration"],
+    note:"육각 컷 디오라마. 청회색 기와 + 등불 웜라이트 vs 야간 블루 대비. 돌바닥 안뜰, 중앙 훠궈 테이블 + 주변 코지 nook. 조명 대비·분위기 레퍼." },
+  { src:"https://i.pinimg.com/736x/bd/21/f9/bd21f9cee890aa24d7f437ecd16078f7.jpg",
+    title:"JOSAQ — 다크 sci-fi 픽셀 디오라마 (육각 컷)",
+    source:"https://i.pinimg.com/736x/bd/21/f9/bd21f9cee890aa24d7f437ecd16078f7.jpg",
+    tags:["isometric","pixel","diorama","hexagon","dark","sci-fi","dystopian","green","josaq"],
+    note:"JOSAQ 정통 도트. 틸/그린 무드 + 네온 그린 포인트. 벽돌·기계·계단 클러터, 캐릭터 배치. 어두운 픽셀 디오라마 기준점." },
+
+  // ══ 옆면뷰(side-view / elevation) — 아이소 대안, 화면 절약형 (2026-06-29) ══
+  { src:"https://img.itch.zone/aW1nLzEzOTMwOTc5LnBuZw==/original/Qqzz8k.png",
+    title:"Platformer House Interior (Penzilla) — 옆면뷰 커버",
+    source:"https://penzilla.itch.io/house-interior",
+    tags:["side-view","elevation","platformer","interior","cutaway","reference"],
+    note:"옆면뷰(단면) 대표 레퍼. 옆에서 본 집 단면 = 다층·계단·엘리베이터. 아이소와 달리 세로로만 쌓여 화면 폭 절약. 데탑버디 '얇은 띠' 후보." },
+  { src:"https://img.itch.zone/aW1nLzEzMjAyMzY1LnBuZw==/original/Nsxo7O.png",
+    title:"Platformer House Interior — 옆면뷰 가구 시트",
+    source:"https://penzilla.itch.io/house-interior",
+    tags:["side-view","elevation","asset-sheet","interior","reference"],
+    note:"소파·침대·책장·TV 전부 옆모습(elevation)으로 그린 에셋. 아이소 가구와 비교용 — 깊이 없이 정측면이라 그리기 단순." },
+  { src:"https://img.itch.zone/aW1nLzE0MjgxNzAxLnBuZw==/original/Bw5lrv.png",
+    title:"Pixel Spaces (Netherzapdos) — 옆면 적층 건물",
+    source:"https://netherzapdos.itch.io/pixel-spaces",
+    tags:["side-view","elevation","stacked","life-sim","reference"],
+    note:"Tiny Tower식 옆면뷰. 방을 위로 쌓는 2D 라이프심. '구석 얇은 띠에 방 적층' 컨셉 직결." },
+  { src:"https://img.itch.zone/aW1nLzE0MzMyMjE0LnBuZw==/original/UXtsFe.png",
+    title:"Pixel Spaces — 옆면 모듈 부품(층·계단·창)",
+    source:"https://netherzapdos.itch.io/pixel-spaces",
+    tags:["side-view","elevation","tileset","modular","reference"],
+    note:"옆면뷰 모듈 타일(바닥층·사다리·계단·창·차양). 옆면도 모듈 조립이 가능함을 보여줌 — 우리 모듈타일 양산 방식과 호환." },
+];
+</script>
+
+<header>
+  <div class="title"><span class="dot"></span>REFERENCE&nbsp;//&nbsp;무드보드</div>
+  <div class="sub">범용 비주얼 레퍼런스 · 이미지 클릭 = <b>확대</b> · <b>ⓘ</b> 정보 펼치기 · <b>⤓</b> 저장</div>
+  <div class="controls">
+    <input id="search" placeholder="검색 — 제목 / 메모 / 태그…" autocomplete="off">
+    <button id="addbtn" class="addbtn">＋ 레퍼 추가</button>
+    <span class="count"><b id="cnt">0</b> refs</span>
+  </div>
+  <div class="tags" id="tags"></div>
+  <div id="exbar"><span><b id="excnt">0</b> 개 제외됨</span>
+    <button id="restore">↩ 전체 복원</button></div>
+</header>
+
+<main>
+  <div id="grid"></div>
+  <div class="empty" id="empty" style="display:none">— 일치하는 레퍼런스 없음 —</div>
+</main>
+
+<footer>second brain · 3.output · reference-board</footer>
+
+<div id="addmodal">
+  <div class="addcard">
+    <h2>＋ 레퍼런스 추가</h2>
+    <div class="hint">이미지 URL 을 붙여넣거나, 아래 영역에 파일을 끌어다 놓기 / 클릭해 선택.<br>추가한 레퍼는 이 브라우저에 저장돼(localStorage) 새로고침해도 남아.</div>
+
+    <label>이미지 URL</label>
+    <input type="text" id="f_src" placeholder="https://…  (또는 아래에서 파일 선택)">
+
+    <div class="drop" id="drop">파일을 여기로 드래그하거나 <b>클릭해서 선택</b><br>로컬 이미지는 자동 축소(최대 1000px) 후 저장</div>
+    <input type="file" id="f_file" accept="image/*" hidden>
+    <div id="srcwarn" class="srcwarn"></div>
+    <div class="preview" id="prev"><img id="previmg" alt="" referrerpolicy="no-referrer"></div>
+
+    <label>제목</label>
+    <input type="text" id="f_title" placeholder="레퍼 제목">
+
+    <label>출처 URL <span>(선택)</span></label>
+    <input type="text" id="f_source" placeholder="https://…">
+
+    <label>태그 <span>(눌러서 추가 · 직접 입력도 OK)</span></label>
+    <input type="text" id="f_tags" placeholder="isometric, cozy, dark">
+    <div class="chipsuggest" id="tagsuggest"></div>
+
+    <label>메모 <span>(선택)</span></label>
+    <textarea id="f_note" placeholder="한 줄 메모"></textarea>
+
+    <div class="addrow">
+      <button id="addcancel">취소</button>
+      <button id="addsave" class="go">추가</button>
+    </div>
+  </div>
+</div>
+
+<div id="lb"><img id="lbimg" alt="" referrerpolicy="no-referrer"><div class="cap"><b id="lbt"></b></div></div>
+
+<script>
+const grid=document.getElementById('grid'), tagsEl=document.getElementById('tags'),
+      search=document.getElementById('search'), cnt=document.getElementById('cnt'),
+      empty=document.getElementById('empty'), lb=document.getElementById('lb'),
+      lbimg=document.getElementById('lbimg'), lbt=document.getElementById('lbt'),
+      exbar=document.getElementById('exbar'), excnt=document.getElementById('excnt');
+let activeTag=null, activeSource=null, q="";
+
+// 사용자가 직접 추가한 레퍼런스 (localStorage 영구 저장 → 빌트인 IMAGES 와 합쳐서 렌더)
+const CUSTKEY="refboard:custom";
+let CUSTOM=JSON.parse(localStorage.getItem(CUSTKEY)||"[]");
+CUSTOM.forEach(i=>i.custom=true);
+function saveCustom(){
+  try{ localStorage.setItem(CUSTKEY, JSON.stringify(CUSTOM.map(({custom,...r})=>r))); }
+  catch(e){ alert("저장 공간이 가득 찼어(localStorage). 로컬 파일 이미지는 용량을 많이 써 — URL 방식으로 추가하거나 기존 커스텀 레퍼를 좀 지워줘."); }
+}
+function allImages(){ return IMAGES.concat(CUSTOM); }
+
+// 출처 그룹: 같은 source끼리 개수·색 부여 (2장 이상이면 "공유 출처"로 표시)
+let srcCount={};
+function buildSrcCount(){ srcCount={}; allImages().forEach(i=>{ if(i.source) srcCount[i.source]=(srcCount[i.source]||0)+1; }); }
+buildSrcCount();
+function srcHue(s){ let h=0; for(const c of s) h=(h*31+c.charCodeAt(0))%360; return h; }
+function srcMeta(u){
+  if(!u) return null;
+  const n=srcCount[u]||1;
+  let host; try{ host=new URL(u).hostname.replace(/^(www|kr|m)\./,''); }catch(e){ host=u; }
+  if(/pinterest/.test(host)) host = u.includes('/search/') ? 'pinterest · 검색' : 'pinterest';
+  return { n, host, hue:srcHue(u), shared:n>1 };
+}
+
+// 제외 목록 (localStorage 영구 저장, src 기준)
+const EXKEY="refboard:excluded";
+let excluded=new Set(JSON.parse(localStorage.getItem(EXKEY)||"[]"));
+function saveEx(){localStorage.setItem(EXKEY,JSON.stringify([...excluded]));}
+function exclude(src){
+  // 커스텀 레퍼는 숨김이 아니라 완전 삭제
+  const idx=CUSTOM.findIndex(c=>c.src===src);
+  if(idx>=0){ CUSTOM.splice(idx,1); saveCustom(); rebuild(); return; }
+  excluded.add(src); saveEx(); render();
+}
+document.getElementById('restore').onclick=()=>{excluded.clear(); saveEx(); render();};
+
+// 모든 태그 수집 (빌트인 + 커스텀) — 커스텀 추가 시 다시 그림
+function buildTags(){
+  const allTags=[...new Set(allImages().flatMap(i=>i.tags||[]))].sort();
+  tagsEl.innerHTML=allTags.map(t=>`<span class="tag${t===activeTag?' on':''}" data-t="${t}">${t}</span>`).join("");
+  tagsEl.querySelectorAll('.tag').forEach(el=>el.onclick=()=>{
+    const t=el.dataset.t;
+    activeTag = activeTag===t ? null : t;
+    tagsEl.querySelectorAll('.tag').forEach(x=>x.classList.toggle('on',x.dataset.t===activeTag));
+    render();
+  });
+}
+buildTags();
+
+// 커스텀 추가/삭제 후 파생 데이터 + 화면 갱신
+function rebuild(){ buildSrcCount(); buildTags(); render(); }
+
+function filtered(){
+  return allImages().filter(i=>{
+    if(excluded.has(i.src)) return false;
+    if(activeSource && i.source!==activeSource) return false;
+    if(activeTag && !(i.tags||[]).includes(activeTag)) return false;
+    if(q){
+      const hay=((i.title||"")+" "+(i.note||"")+" "+(i.tags||[]).join(" ")).toLowerCase();
+      if(!hay.includes(q)) return false;
+    }
+    return true;
+  });
+}
+
+function fname(url,title){
+  let base=(title||"ref").replace(/[^\w가-힣\- ]+/g,"").trim().replace(/\s+/g,"-")||"ref";
+  const ext=(url.split("?")[0].match(/\.(jpe?g|png|webp|gif|avif)$/i)||[,"jpg"])[1];
+  return base+"."+ext;
+}
+
+async function dl(btn,url,title){
+  btn.disabled=true; const old=btn.textContent; btn.textContent="…";
+  try{
+    const r=await fetch(url,{mode:"cors"}); if(!r.ok) throw 0;
+    const b=await r.blob(); const u=URL.createObjectURL(b);
+    const a=document.createElement("a"); a.href=u; a.download=fname(url,title);
+    document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(()=>URL.revokeObjectURL(u),1500);
+    btn.textContent="✓ 저장";
+  }catch(e){
+    // CORS 차단 → 새 탭에서 열어 직접 저장 유도
+    window.open(url,"_blank"); btn.textContent="새 탭↗";
+  }
+  setTimeout(()=>{btn.textContent=old; btn.disabled=false},1600);
+}
+
+// 묶음 키: 핀터레스트는 묶지 않음(여러 원본 모음). 같은 source 2장 이상 & 비-핀터레스트만 묶음.
+function groupKey(u){
+  if(!u) return null;
+  let h; try{ h=new URL(u).hostname; }catch(e){ return null; }
+  if(/pinterest/.test(h)) return null;
+  if((srcCount[u]||0) < 2) return null;
+  return u;
+}
+function groupLabel(u){
+  try{ const h=new URL(u).hostname.replace(/^(www|kr|m)\./,'');
+    if(h.includes('itch')) return 'itch.io · '+h.split('.')[0];
+    return h;
+  }catch(e){ return u; }
+}
+
+function cardHTML(i, n){
+  const tags=(i.tags||[]).map(t=>`<span class="mtag">${t}</span>`).join("");
+  const ttl=(i.title||'').replace(/"/g,'&quot;');
+  const src=i.source?`<a href="${i.source}" target="_blank" rel="noopener">출처↗</a>`:"";
+  return `<div class="card" data-full="${i.src}" data-t="${ttl}" style="animation-delay:${Math.min(n*25,360)}ms">
+      <div class="kill" data-kill="${i.src}" title="${i.custom?'이 레퍼 삭제':'이 레퍼 제외'}">✕</div>
+      <div class="infochip" title="정보 펼치기">ⓘ</div>
+      ${i.custom?'<div class="mine">내 레퍼</div>':''}
+      <img src="${i.src}" loading="lazy" alt="${i.title||''}" referrerpolicy="no-referrer"
+           onerror="this.outerHTML='<div class=broken>⚠ 이미지 로드 실패<br>원본 링크 확인 필요</div>'">
+      <div class="meta">
+        ${i.title?`<div class="h">${i.title}</div>`:""}
+        ${i.note?`<div class="note">${i.note}</div>`:""}
+        ${tags?`<div class="mtags">${tags}</div>`:""}
+        <div class="acts">
+          ${src}
+          <button class="save" data-url="${i.src}" data-t="${ttl}">⤓ 저장</button>
+        </div>
+      </div>
+    </div>`;
+}
+function sectionHTML(label, hue, items, startN, neutral){
+  const head = `<div class="grphead${neutral?' neutral':''}" style="--h:${hue}">
+      <span class="gd"></span><span class="gl">${label}</span>
+      <span class="gc">${items.length}</span><span class="chev">▼</span></div>`;
+  const cards = items.map((i,k)=>cardHTML(i,startN+k)).join("");
+  return `<section class="grp">${head}<div class="grid">${cards}</div></section>`;
+}
+
+function render(){
+  const list=filtered();
+  cnt.textContent=list.length;
+  excnt.textContent=excluded.size;
+  exbar.classList.toggle('on',excluded.size>0);
+  empty.style.display=list.length?"none":"block";
+
+  // 묶음 / 비묶음(핀터레스트·단독) 분리
+  const groups=new Map(); const loose=[];
+  list.forEach(i=>{ const k=groupKey(i.source);
+    if(k){ if(!groups.has(k)) groups.set(k,[]); groups.get(k).push(i); }
+    else loose.push(i);
+  });
+  let html=""; let n=0;
+  groups.forEach((items,key)=>{ html+=sectionHTML(groupLabel(key), srcHue(key), items, n, false); n+=items.length; });
+  if(loose.length){ html+=sectionHTML("개별 레퍼런스 · 핀터레스트 외", 0, loose, n, true); n+=loose.length; }
+  grid.innerHTML=html;
+
+  // 섹션 헤더 = 접기/펴기
+  grid.querySelectorAll('.grphead').forEach(h=>h.onclick=()=>h.parentElement.classList.toggle('collapsed'));
+  // 이미지 클릭 = 바로 확대 (라이트박스)
+  grid.querySelectorAll('.card img').forEach(img=>img.onclick=e=>{
+    e.stopPropagation();
+    const c=img.closest('.card');
+    lbimg.src=c.dataset.full; lbt.textContent=c.dataset.t||""; lb.classList.add('on');
+  });
+  // ⓘ 칩 클릭 = 정보 패널 펼치기/접기 (이미지 아래로 열림, 가리지 않음)
+  grid.querySelectorAll('.infochip').forEach(b=>b.onclick=e=>{
+    e.stopPropagation(); b.closest('.card').classList.toggle('open');
+  });
+  grid.querySelectorAll('.save').forEach(b=>b.onclick=e=>{
+    e.stopPropagation(); dl(b,b.dataset.url,b.dataset.t);
+  });
+  grid.querySelectorAll('[data-kill]').forEach(b=>b.onclick=e=>{
+    e.stopPropagation(); exclude(b.dataset.kill);
+  });
+}
+
+search.oninput=e=>{q=e.target.value.trim().toLowerCase(); render();};
+lb.onclick=()=>lb.classList.remove('on');
+document.addEventListener('keydown',e=>{if(e.key==="Escape"){lb.classList.remove('on'); closeAdd();}});
+
+// ════ 레퍼 추가 모달 ════
+const addmodal=document.getElementById('addmodal');
+const F={ src:document.getElementById('f_src'), title:document.getElementById('f_title'),
+  source:document.getElementById('f_source'), tags:document.getElementById('f_tags'),
+  note:document.getElementById('f_note') };
+const drop=document.getElementById('drop'), fileInput=document.getElementById('f_file'),
+  prev=document.getElementById('prev'), previmg=document.getElementById('previmg');
+let fileData=null;  // 로컬 파일을 축소한 dataURL
+
+// 기존 태그를 칩으로 → 클릭만으로 추가/제거 (타이핑 최소화)
+const tagsuggest=document.getElementById('tagsuggest');
+function tagSet(){ return new Set(F.tags.value.split(",").map(s=>s.trim()).filter(Boolean)); }
+function paintChips(){ const cur=tagSet(); tagsuggest.querySelectorAll('.sg').forEach(c=>c.classList.toggle('on',cur.has(c.dataset.t))); }
+function buildTagSuggest(){
+  const existing=[...new Set(allImages().flatMap(i=>i.tags||[]))].sort();
+  tagsuggest.innerHTML=existing.map(t=>`<span class="sg" data-t="${t}">${t}</span>`).join("");
+  tagsuggest.querySelectorAll('.sg').forEach(c=>c.onclick=()=>{
+    const cur=tagSet(), t=c.dataset.t;
+    cur.has(t)?cur.delete(t):cur.add(t);
+    F.tags.value=[...cur].join(", "); paintChips();
+  });
+  paintChips();
+}
+F.tags.oninput=paintChips;
+
+function openAdd(){ buildTagSuggest(); addmodal.classList.add('on'); F.src.focus(); }
+function closeAdd(){ addmodal.classList.remove('on'); }
+function resetForm(){ for(const k in F) F[k].value=""; fileData=null; prev.style.display="none"; previmg.removeAttribute('src'); document.getElementById('srcwarn').classList.remove('on'); }
+
+document.getElementById('addbtn').onclick=openAdd;
+document.getElementById('addcancel').onclick=()=>{closeAdd(); resetForm();};
+addmodal.onclick=e=>{ if(e.target===addmodal){closeAdd(); resetForm();} };
+
+// 파일 → 캔버스로 최대 1000px 축소 → webp dataURL (localStorage 용량 절약)
+function loadFile(file){
+  if(!file || !file.type.startsWith('image/')) return;
+  if(!F.title.value.trim() && file.name)
+    F.title.value=file.name.replace(/\.[^.]+$/,"").replace(/[-_]+/g," ").trim();
+  const fr=new FileReader();
+  fr.onload=()=>{
+    const img=new Image();
+    img.onload=()=>{
+      const max=1000, scale=Math.min(1, max/Math.max(img.width,img.height));
+      const w=Math.round(img.width*scale), h=Math.round(img.height*scale);
+      const cv=document.createElement('canvas'); cv.width=w; cv.height=h;
+      cv.getContext('2d').drawImage(img,0,0,w,h);
+      fileData=cv.toDataURL('image/webp',0.85);
+      previmg.src=fileData; prev.style.display="block"; F.src.value="";
+    };
+    img.src=fr.result;
+  };
+  fr.readAsDataURL(file);
+}
+drop.onclick=()=>fileInput.click();
+fileInput.onchange=e=>loadFile(e.target.files[0]);
+drop.ondragover=e=>{e.preventDefault(); drop.classList.add('over');};
+drop.ondragleave=()=>drop.classList.remove('over');
+drop.ondrop=e=>{e.preventDefault(); drop.classList.remove('over'); loadFile(e.dataTransfer.files[0]);};
+const srcwarn=document.getElementById('srcwarn');
+// 직접 이미지 주소가 아닌 '페이지 URL' 감지 → 안내 (특히 핀터레스트 핀 페이지)
+function checkSrc(v){
+  let host=""; try{ host=new URL(v).hostname; }catch(e){ srcwarn.classList.remove('on'); return; }
+  const isImg=/\.(jpe?g|png|webp|gif|avif|svg)(\?|$)/i.test(v) || /(i\.pinimg|pbs\.twimg|images?\.|img\.|cdn)/i.test(host);
+  // URL 끝 파일명이 단어형이면 제목 자동 채움 (해시·숫자 덩어리는 무시)
+  if(!F.title.value.trim()){
+    try{ const seg=decodeURIComponent(new URL(v).pathname.split('/').pop()||"").replace(/\.[^.]+$/,"");
+      if(seg && /[a-z]{3,}/i.test(seg) && !/^[0-9a-f._-]{10,}$/i.test(seg))
+        F.title.value=seg.replace(/[-_]+/g," ").trim();
+    }catch(e){}
+  }
+  if(/pinterest\./.test(host) && !/^i\.pinimg/.test(host)){
+    srcwarn.innerHTML="이건 핀터레스트 <b>핀 페이지 주소</b>라 이미지가 아니야. 핀 위에서 우클릭 → <b>‘이미지 주소 복사’</b> 한 걸 붙여넣어 (i.pinimg.com/… 로 시작).";
+    srcwarn.classList.add('on');
+  } else if(!isImg){
+    srcwarn.innerHTML="직접 이미지 주소가 아닐 수 있어. 이미지 위에서 우클릭 → <b>‘이미지 주소 복사’</b> 를 써봐. 안 뜨면 그대로 둬도 돼.";
+    srcwarn.classList.add('on');
+  } else srcwarn.classList.remove('on');
+}
+F.src.oninput=()=>{
+  const v=F.src.value.trim();
+  if(v){ fileData=null; previmg.src=v; prev.style.display="block"; checkSrc(v); }
+  else if(!fileData){ prev.style.display="none"; srcwarn.classList.remove('on'); }
+};
+
+document.getElementById('addsave').onclick=()=>{
+  const src = fileData || F.src.value.trim();
+  if(!src){ F.src.focus(); F.src.placeholder="⚠ 이미지 URL 또는 파일이 필요해"; return; }
+  CUSTOM.push({ src,
+    title:F.title.value.trim()||"내 레퍼런스",
+    source:F.source.value.trim()||undefined,
+    tags:F.tags.value.split(",").map(s=>s.trim()).filter(Boolean),
+    note:F.note.value.trim()||undefined,
+    custom:true });
+  saveCustom(); closeAdd(); resetForm(); rebuild();
+};
+
+render();
+</script>
+</body>
+</html>
