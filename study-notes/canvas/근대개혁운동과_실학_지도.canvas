@@ -1,0 +1,37 @@
+{
+  "nodes": [
+    { "id": "grpRoot", "type": "group", "x": -1060, "y": -320, "width": 540, "height": 780, "label": "조선후기 (17~18C) · 뿌리와 맹아" },
+    { "id": "grpMovement", "type": "group", "x": 60, "y": -180, "width": 560, "height": 620, "label": "개항 이후 (19C) · 근대 개혁운동" },
+
+    { "id": "silhak", "type": "text", "x": -1020, "y": -280, "width": 460, "height": 90, "color": "5",
+      "text": "## 실학 (17~18C)\n조선후기 개혁 사상 = **근대의 사상적 뿌리**\n(자본주의 맹아의 '사상 버전')" },
+    { "id": "jungnong", "type": "text", "x": -1020, "y": -150, "width": 460, "height": 110, "color": "5",
+      "text": "### 중농학파 (경세치용)\n이익 · **정약용**\n토지개혁: 균전·한전·여전론, 민본" },
+    { "id": "jungsang", "type": "text", "x": -1020, "y": 0, "width": 460, "height": 130, "color": "5",
+      "text": "### 중상학파 (북학·이용후생)\n박지원 → 박제가 → 김정희 → 오경석 · 박규수\n상공업 진흥 · 기술 · 통상개국론" },
+    { "id": "manga", "type": "text", "x": -1020, "y": 180, "width": 460, "height": 160, "color": "3",
+      "text": "## 자본주의 맹아 (경제 징후)\n- 농업: **광작**(이앙법 확산)\n- 광업: **덕대제**(덕대=경영 / 혈주=노동)\n- 상업: **사상**[송·만·내·경·강·유상] · 도고\n- 화폐: **상평통보**(상품화폐경제)" },
+
+    { "id": "geundae", "type": "text", "x": -400, "y": -420, "width": 400, "height": 120, "color": "2",
+      "text": "## 근대사상 (자유 · 천부인권)\n신분제 동요 → 근대의 **두 과제**\n➊ 반봉건  ➋ 반침략" },
+
+    { "id": "gaehwa", "type": "text", "x": 100, "y": -140, "width": 480, "height": 130, "color": "4",
+      "text": "## 개화 — 위로부터 (엘리트)\n개화사상 → **갑신정변(1884) · 갑오개혁(1894)**\n반봉건 **○** / 반침략 **✕** (일본 의존)" },
+    { "id": "donghak", "type": "text", "x": 100, "y": 40, "width": 480, "height": 150, "color": "1",
+      "text": "## 동학 — 아래로부터 (민중) ⭐ 가장 근본\n동학농민전쟁(1894) · **폐정개혁안 12조**\n신분해방 · **토지 평균분작**\n반봉건 **○** / 반침략 **○**" },
+    { "id": "cheoksa", "type": "text", "x": 100, "y": 240, "width": 480, "height": 130, "color": "6",
+      "text": "## 위정척사 — 전통 수호\n존왕양이 → **의병**(을미1895·을사1905·정미1907)\n반봉건 **✕** / 반침략 **○**\n(성리학 정통 화서학파)" }
+  ],
+  "edges": [
+    { "id": "e-sil-nong", "fromNode": "silhak", "fromSide": "bottom", "toNode": "jungnong", "toSide": "top" },
+    { "id": "e-sil-sang", "fromNode": "silhak", "fromSide": "bottom", "toNode": "jungsang", "toSide": "top" },
+    { "id": "e-sil-manga", "fromNode": "silhak", "fromSide": "left", "toNode": "manga", "toSide": "left", "label": "함께 = 내재적 발전" },
+
+    { "id": "e-sang-gaehwa", "fromNode": "jungsang", "fromSide": "right", "toNode": "gaehwa", "toSide": "left", "color": "4", "label": "직결 — 개화사상의 뿌리" },
+    { "id": "e-nong-donghak", "fromNode": "jungnong", "fromSide": "right", "toNode": "donghak", "toSide": "left", "color": "1", "label": "민본·토지개혁 정서로 통함" },
+
+    { "id": "e-gd-gaehwa", "fromNode": "geundae", "fromSide": "right", "toNode": "gaehwa", "toSide": "left" },
+    { "id": "e-gd-donghak", "fromNode": "geundae", "fromSide": "right", "toNode": "donghak", "toSide": "left" },
+    { "id": "e-gd-cheoksa", "fromNode": "geundae", "fromSide": "bottom", "toNode": "cheoksa", "toSide": "left" }
+  ]
+}
